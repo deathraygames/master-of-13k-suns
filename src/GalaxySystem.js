@@ -61,6 +61,15 @@ class GalaxySystem {
 		this.heatLevel = Math.floor(Math.abs(pr.getNextBell(MAX_HEAT_LEVEL)));
 		this.luminosityLevel = pr.getNext(MAX_LUMINOSITY_LEVEL + 1) - 1; // index integer between 0 and max
 		this.spectralClassification = GalaxySystem.getSpectralClassification(this.heatLevel, this.luminosityLevel);
+		this.dna = this.createDna(pr);
+	}
+
+	createDna(pr) {
+		this.dna = [];
+		for(let i = 0; i < 12; i += 1) {
+			this.dna.push(pr.getNext());
+		}
+		return this.dna;
 	}
 
 	static getSpectralClassification(heatLevel, luminosityLevel) { // from galGen

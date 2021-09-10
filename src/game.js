@@ -7,7 +7,7 @@ class Game {
 	constructor() {
 		this.version = '0.2021';
 		this.seed = 13312;
-		this.loopTickTime = 1000; // ms
+		this.loopTickTime = 202; // ms
 		this.zoom = 1;
 		this.renderer = new SvgRenderer();
 		this.renderer.init('#display');
@@ -21,6 +21,7 @@ class Game {
 		this.timerId = null;
 		this.lastTime = 0;
 		this.selected = {};
+		this.showThingKey = null;
 		console.log(this.galaxy.getSector(0, 0));
 		window.document.addEventListener('DOMContentLoaded', () => this.setup());
 	}
@@ -116,20 +117,30 @@ class Game {
 		}, 0);
 	}
 
+	toggleListInfo(itemElt, key) {
+		itemElt.classList.toggle('show-info');
+		this.showThingKey = (this.showThingKey === key) ? null : key;
+	}
+
 	handleListClick(event, what, id) {
 		const buildButton = event.target.closest('.build-button');
 		const thing = event.target.closest('.thing');
 		if (!thing) return;
 		const { key } = thing.dataset;
+		if (!key) {
+			console.warn('No key', thing);
+			return;
+		}
 		if (buildButton) {
-			if (key) this.empire.enqueueThing(what, key);
+			this.empire.enqueueThing(what, key);
 			return;
 		}
 		if (event.target.className === 'travel-toggle') {
-			if (key) this.toggleSelection(what, key);
+			this.toggleSelection(what, key);
 			return;
 		}
-		console.log(event.target, thing, buildButton);
+		this.toggleListInfo(thing, key);
+		// console.log(event.target, thing, buildButton);
 	}
 
 	refresh() {
@@ -139,7 +150,9 @@ class Game {
 	}
 
 	travel(destination) {
-		this.empire.instaTravel(destination, this.getSelected());
+		const coords = destination.split(',').map((n) => Number(n));
+		const system = this.galaxy.getSystem(coords[0], coords[1], coords[2]);
+		this.empire.instaTravel(destination, this.getSelected(), system);
 		this.refresh();
 	}
 
@@ -185,6 +198,7 @@ class Game {
 			const n = systemVm[key];
 			elt.innerText = Game.formatNumber(n);
 		});
+		this.setText('empire-science', Game.formatNumber(this.empire.data.science));
 	}
 
 	static getProgressBarHtml(percent, num, den) {
@@ -196,12 +210,26 @@ class Game {
 		);
 	}
 
+	getThingInfoHtml(what, key) {
+		const details = Empire.getThingDetails(what, key);
+		if (!details) return 'N/A';
+		delete details.name;
+		let html = '';
+		for(let stat in details) {
+			const label = Empire.PROPERTY_LABELS[stat] || stat;
+			html += `<div>${label}: ${details[stat]}</div>`;
+		}
+		return html; // JSON.stringify(details);
+	}
+
+
 	getListItemsHtml(what, allKeys = [], things = [], options = {}) {
 		let html = '';
 		allKeys.forEach((key) => {
 			const thing = things[key] || {};
 			const n = thing.completedCount || 0;
 			const total = thing.totalCount || n;
+			const isShown = (key === this.showThingKey);
 			const isSelected = this.isSelected(what, key);
 			const isBuilding = (total > n);
 			const outOf = (isBuilding) ? `/${total}` : '';
@@ -213,10 +241,11 @@ class Game {
 			if (n <= 0) classes.push('none');
 			if (isBuilding) classes.push('building');
 			if (isSelected) classes.push('selected');
+			if (isShown) classes.push('show-info');
 			html += (
 				`<li class="${classes.join(' ')}" data-key="${key}">
-					<span>${thing.name || key}</span>
-					<span>${n}${outOf}</span>
+					<span class="thing-name">${thing.name || key}</span>
+					<span class="thing-count">${n}${outOf}</span>
 					<span>
 						${isBuilding ? '⌛️' : '<button type="button" class="build-button">+</button>'}
 					</span>
@@ -225,7 +254,10 @@ class Game {
 							${isSelected ? 'checked="checked"' : ''}
 							${n <= 0 ? 'disabled="disabled"' : ''} />
 						</span>` : ''}
-						${isBuilding ? `<div class="build-progress">${Game.getProgressBarHtml(progressPercent, health, maxHealth)}</div>` : ''}
+					${isBuilding ? `<div class="build-progress">${Game.getProgressBarHtml(progressPercent, health, maxHealth)}</div>` : ''}
+					<div class="thing-info">
+						${this.getThingInfoHtml(what, key)}
+					</div>
 				</li>`
 			);
 		});
@@ -234,7 +266,6 @@ class Game {
 
 	getSystemItemsHtml(systemVm, travelFleetCount) {
 		const systems = this.getNearbySystems();
-		console.log(systems.length);
 		let html = '';
 		systems.forEach((system) => {
 			const key = [
@@ -297,6 +328,8 @@ class Game {
 		this.setText('planet-count', system.planetCount);
 		this.setText('sector-coords', system.sectorCoordinates.join(', '));
 		this.setText('sector-name', system.sector.name);
+		this.setText('explored-count', this.empire.getExploredSystemsCount());
+		this.setText('settled-count', this.empire.getSettledSystemsCount());
 	}
 
 	getSystemDrawingObjects(system) {
@@ -352,8 +385,8 @@ class Game {
 
 	getNearbySectors() {
 		const coords = this.empire.getCurrentCoordinates();
-		const min = { x: -4, y: -4 };
-		const max = { x: 4, y: 4 };
+		const min = { x: -1, y: -1 };
+		const max = { x: 1, y: 1 };
 		const sectors = [];
 		for(let y = min.y; y <= max.y; y += 1) {
 			for(let x = min.x; x <= max.x; x += 1) {

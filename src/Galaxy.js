@@ -8,6 +8,11 @@ class Galaxy {
 	getSector(x, y) {
 		return new GalaxySector([x, y], this.seed);
 	}
+
+	getSystem(x, y, i) {
+		const sector = this.getSector(x, y);
+		return sector.systems[i];
+	}
 }
 
 export default Galaxy;

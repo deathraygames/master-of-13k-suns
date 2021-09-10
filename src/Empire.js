@@ -7,26 +7,65 @@ const THING_DATA_KEYS = {
 const SHIP_DETAILS = {
 	command: {
 		name: 'Command Ship',
-		maxHealth: 100,
+		maxHealth: 4000,
 		shipConstructionRate: 10,
 		stationConstructionRate: 10,
 		resourceCollectionRate: 10,
-		maxResources: 10,
-		maxCount: 1,
+		maxResources: 4,
+		// maxCount: 1,
 	},
-	scouts: { name: 'Scouts', maxHealth: 100 },
-	colonizers: { name: 'Colonizers', maxHealth: 500, maxResources: 8, stationConstructionRate: 10 },
-	constructors: { name: 'Constructors', maxHealth: 100, shipConstructionRate: 1, stationConstructionRate: 10 },
+	scouts: {
+		name: 'Scouts',
+		maxHealth: 100,
+		scienceRate: 0.1,
+	},
+	colonizers: {
+		name: 'Colonizers',
+		maxHealth: 1200,
+		maxResources: 8,
+		stationConstructionRate: 10
+	},
+	constructors: {
+		name: 'Constructors',
+		maxHealth: 400,
+		shipConstructionRate: 1,
+		stationConstructionRate: 3,
+	},
 	// battleships: { name: 'Battleships', maxHealth: 800 },
-	miners: { name: 'Mining Ships', maxHealth: 200, resourceCollectionRate: 2 },
-	haulers: { name: 'Haulers', maxHealth: 400, maxResources: 8 },
+	miners: {
+		name: 'Mining Ships',
+		maxHealth: 200,
+		resourceCollectionRate: 2
+	},
+	haulers: { name: 'Haulers', maxHealth: 200, maxResources: 8 },
 };
 
 const STATION_DETAILS = {
-	settlements: { name: 'Settlements', maxHealth: 500, maxResources: 100 },
-	shipyards: { name: 'Shipyards', maxHealth: 900, shipConstructionRate: 10, maxResources: 5, },
-	collectors: { name: 'Collectors', maxHealth: 350, resourceCollectionRate: 9, maxResources: 5, },
+	settlements: { name: 'Settlements',
+		maxHealth: 1000, // costs more because they contribute to settled system count
+		maxResources: 100,
+	},
+	shipyards: { name: 'Shipyards',
+		maxHealth: 900,
+		shipConstructionRate: 10,
+		maxResources: 5,
+	},
+	collectors: { name: 'Collectors',
+		maxHealth: 750,
+		resourceCollectionRate: 9,
+		maxResources: 5,
+	},
+	laboratory: {
+		name: 'Laboratory',
+		maxHealth: 1000,
+		scienceRate: 1.4,
+		resourceCollectionRate: 1,
+	}
 };
+
+const SHIP_KEYS = Object.keys(SHIP_DETAILS);
+const STATION_KEYS = Object.keys(STATION_DETAILS);
+const SETTLEMENTS = 'settlements';
 
 const STARTING_SYSTEM_DATA = {
 	fleet: {
@@ -44,17 +83,20 @@ const STARTING_SYSTEM_DATA = {
 		collectors: [],
 	},
 	resources: 0,
+	scienceLeft: 0,
 };
 
 const BLANK_SYSTEM_DATA = {
 	fleet: {},
 	stations: {},
 	resources: 0,
+	scienceLeft: 0,
 };
 
 const STARTING_EMPIRE_DATA = {
 	location: '0,0,0',
 	lastComputeDateTime: null,
+	science: 0,
 	transit: [
 		// {
 		// 	fleet: {},
@@ -86,8 +128,19 @@ const STARTING_COMPUTED = {
 			settlementRate: 0,
 			resourceCollectionRate: 0,
 			maxResources: 0,
+			scienceRate: 0,
 		},
 	},
+};
+
+const PROPERTY_LABELS = {
+	name: 'Name',
+	maxHealth: 'Cost',
+	shipConstructionRate: 'Ship Construction Rate',
+	stationConstructionRate: 'Station Construction Rate',
+	resourceCollectionRate: 'Resource Collection Rate',
+	maxResources: 'Max Resources',
+	maxCount: 'Max Count',
 };
 
 function clone(obj) {
@@ -106,9 +159,10 @@ class Empire {
 	static THING_STATION = THING_STATION;
 	static ALL_SHIP_KEYS = Object.keys(SHIP_DETAILS);
 	static ALL_STATION_KEYS = Object.keys(STATION_DETAILS);
+	static PROPERTY_LABELS = PROPERTY_LABELS;
 
 	static getShipDetails(key) {
-		return SHIP_DETAILS[key];
+		return SHIP_DETAILS[key] ? clone(SHIP_DETAILS[key]) : null;
 	}
 
 	static getStationDetails(key) {
@@ -184,11 +238,17 @@ class Empire {
 		return { constructionKey, constructionIndex };
 	}
 
+	getSettledSystemsCount() {
+		return Object.keys(this.data.systems).reduce((systemSum, systemKey) => {
+			// const totalCompletedThings = STATION_KEYS.reduce((thingSum, key) => {
+			// 	return thingSum + this.getCompletedThingCount(systemKey, THING_STATION, key);
+			// }, 0);
+			return systemSum + this.getCompletedThingCount(systemKey, THING_STATION, SETTLEMENTS);
+		}, 0);
+	}
+
 	getExploredSystemsCount() {
-		// return Object.keys(this.data.systems).reduce((sum, systemKey) => {
-		// 	this.getCompletedThingCount(systemKey, THING_STATION, )
-		// 	return sum + ()
-		// }, 0);
+		return Object.keys(this.data.systems).length;
 	}
 
 	enqueueThing(what, key) {
@@ -208,11 +268,17 @@ class Empire {
 		thingsArr.length = 0;
 	}
 
-	instaTravel(destination, travelers = []) {
+	makeNewSystem(systemKey, galaxySystem) {
+		this.data.systems[systemKey] = clone(BLANK_SYSTEM_DATA);
+		const MAX_SYSTEM_SCIENCE = 1000;
+		this.data.systems[systemKey].scienceLeft = Math.ceil(galaxySystem.dna[0] * MAX_SYSTEM_SCIENCE);
+	}
+
+	instaTravel(destination, travelers = [], galaxySystem) {
 		console.log(destination, travelers);
 		const systemKey = this.data.location;
 		const { systems } = this.data;
-		if (!systems[destination]) systems[destination] = clone(BLANK_SYSTEM_DATA);
+		if (!systems[destination]) this.makeNewSystem(destination, galaxySystem);
 		travelers.forEach((who) => {
 			const [what, key] = who;
 			const thingsArr = this.getSystemThingsArray(systemKey, what, key);
@@ -330,6 +396,7 @@ class Empire {
 			'stationConstructionRate',
 			'resourceCollectionRate',
 			'maxResources',
+			'scienceRate',
 		];
 		// Start at zero, and increase
 		valueKeys.forEach((valueKey) => {
@@ -382,6 +449,11 @@ class Empire {
 		availableResources -= usedOnStation;
 		// Store leftover
 		systemData.resources = Math.min(availableResources, systemComputed.maxResources);
+
+		const actualScienceRate = Math.min(systemComputed.scienceRate, systemData.scienceLeft);
+		systemData.scienceLeft -= actualScienceRate;
+		this.data.science += actualScienceRate;
+		// console.log(systemComputed.scienceRate, systemData.scienceLeft);
 	}
 
 	compute(seconds = 0) {
