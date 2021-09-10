@@ -65,6 +65,7 @@ class Game {
 			const empireData = JSON.parse(empireDataString);
 			this.empire = new Empire(empireData);
 			this.getElt('save-load-info').innerText = `Loaded data from ${empireData.lastComputeDateTime}`;
+			this.refresh();
 		} catch (err) {
 			window.alert(`Load failed\n${err}`);
 			console.error(err);
@@ -131,11 +132,15 @@ class Game {
 		console.log(event.target, thing, buildButton);
 	}
 
-	travel(destination) {
-		this.empire.instaTravel(destination, this.getSelected());
+	refresh() {
 		this.clearSelected();
 		this.drawSystem();
 		this.draw();
+	}
+
+	travel(destination) {
+		this.empire.instaTravel(destination, this.getSelected());
+		this.refresh();
 	}
 
 	handleSystemListClick(event) {
@@ -162,8 +167,7 @@ class Game {
 		this.empire.advance(1);
 		this.getElt('seed').innerText = this.seed;
 		this.getElt('version').innerText = this.version;
-		this.drawSystem(); // Only needs to be done when moving
-		this.draw();
+		this.refresh();
 		this.start();
 	}
 
