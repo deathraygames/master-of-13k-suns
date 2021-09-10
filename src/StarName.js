@@ -1,4 +1,4 @@
-import PseudoRandom from "./PseudoRandom";
+import PseudoRandom from './PseudoRandom.js';
 
 const SYLLABLES = [
 	'a', 'agg',	'atta',	'akk',

@@ -1,5 +1,5 @@
-import PseudoRandom from "./PseudoRandom";
-import GalaxySystem from "./GalaxySystem";
+import PseudoRandom from './PseudoRandom.js';
+import GalaxySystem from './GalaxySystem.js';
 
 const SECTOR_COORDINATE_SIZE = 10000;
 
