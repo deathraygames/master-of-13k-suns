@@ -15,11 +15,11 @@ const SHIP_DETAILS = {
 		maxCount: 1,
 	},
 	scouts: { name: 'Scouts', maxHealth: 100 },
-	colonizers: { name: 'Colonizers', maxHealth: 500 },
+	colonizers: { name: 'Colonizers', maxHealth: 500, maxResources: 8, stationConstructionRate: 10 },
 	constructors: { name: 'Constructors', maxHealth: 100, shipConstructionRate: 1, stationConstructionRate: 10 },
 	// battleships: { name: 'Battleships', maxHealth: 800 },
 	miners: { name: 'Mining Ships', maxHealth: 200, resourceCollectionRate: 2 },
-	// haulers: { name: 'Haulers', maxHealth: 400, maxResources: 1 },
+	haulers: { name: 'Haulers', maxHealth: 400, maxResources: 8 },
 };
 
 const STATION_DETAILS = {
@@ -36,6 +36,7 @@ const STARTING_SYSTEM_DATA = {
 		constructors: [],
 		// battleships: [],
 		miners: [],
+		haulers: [],
 	},
 	stations: {
 		settlements: [STATION_DETAILS.settlements.maxHealth],

@@ -1,4 +1,4 @@
-import GalaxySector from "./GalaxySector.js";
+import GalaxySector from './GalaxySector.js';
 
 class Galaxy {
 	constructor(seed) {
