@@ -29,4 +29,4 @@ Rather than using webpack for compression like last year, instead I used vite - 
 * Minified: 26.2 KB
 	* js: 18.3 KB
 	* html/css: 7.98 KB (it actually went up a tiny amount)
-* Zipped: **9.00** KB (Plenty of extra space!)
+* Zipped: **8.95** KB (Plenty of extra space!)
