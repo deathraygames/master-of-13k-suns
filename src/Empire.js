@@ -494,6 +494,8 @@ class Empire {
 				// How much is really available given the construction rate?
 				const whatRate = THING_COMPUTED_RATE[what];
 				const constructionRate = (systemComputed[whatRate] * seconds);
+				// FIXME: Construction rate based on type of thing should be dimished if there
+				// are multiple of them being produced.
 				const availableForItem = Math.min(availableResources, constructionRate);
 				const used = this.constructThing(systemKey, what, key, index, availableForItem);
 				availableResources -= used;

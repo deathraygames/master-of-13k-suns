@@ -5,7 +5,7 @@ import Empire from './Empire.js';
 
 class Game {
 	constructor() {
-		this.version = '0.2021';
+		this.version = '1.0.0';
 		this.seed = 13312;
 		this.loopTickTime = 202; // ms
 		this.zoom = 1;
@@ -265,10 +265,10 @@ class Game {
 		return html;
 	}
 
-	getSystemItemsHtml(systemVm, travelFleetCount) {
-		const systems = this.getNearbySystems();
+	getSystemItemsHtml(galacticSystems, travelFleetCount) {
+		// console.log(galacticSystems, systemVm);
 		let html = '';
-		systems.forEach((system) => {
+		galacticSystems.forEach((system) => {
 			const key = [
 				system.sector.galaxyPosition.x,
 				system.sector.galaxyPosition.y,
@@ -312,7 +312,8 @@ class Game {
 		const travelFleetCount = this.getSelectedCount();
 		this.getElt('travel').classList.toggle('ready', travelFleetCount > 0);
 		this.setText('selected-count', travelFleetCount);
-		this.getElt('system-list').innerHTML = this.getSystemItemsHtml(systemVm, travelFleetCount);
+		const systems = this.getNearbySystems();
+		this.getElt('system-list').innerHTML = this.getSystemItemsHtml(systems, travelFleetCount);
 	}
 
 	drawSystem() {
