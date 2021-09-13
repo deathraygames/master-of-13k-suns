@@ -4,15 +4,20 @@ const THING_DATA_KEYS = {
 	ship: 'fleet',
 	station: 'stations',
 };
-const SHIP_DETAILS = {
+const THING_COMPUTED_RATE = {
+	ship: 'shipConstructionRate',
+	station: 'stationConstructionRate',
+};
+
+const SHIP_DETAILS = Object.freeze({
 	command: {
 		name: 'Command Ship',
 		maxHealth: 4000,
-		shipConstructionRate: 10,
-		stationConstructionRate: 10,
-		resourceCollectionRate: 10,
+		shipConstructionRate: 8,
+		stationConstructionRate: 8,
+		resourceCollectionRate: 8,
 		maxResources: 4,
-		// maxCount: 1,
+		queueMax: 2,
 	},
 	scouts: {
 		name: 'Scouts',
@@ -38,9 +43,9 @@ const SHIP_DETAILS = {
 		resourceCollectionRate: 2
 	},
 	haulers: { name: 'Haulers', maxHealth: 200, maxResources: 8 },
-};
+});
 
-const STATION_DETAILS = {
+const STATION_DETAILS = Object.freeze({
 	settlements: { name: 'Settlements',
 		maxHealth: 1000, // costs more because they contribute to settled system count
 		maxResources: 100,
@@ -60,8 +65,14 @@ const STATION_DETAILS = {
 		maxHealth: 1000,
 		scienceRate: 1.4,
 		resourceCollectionRate: 1,
-	}
-};
+	},
+	administration: {
+		name: 'Administration Center',
+		maxHealth: 850,
+		maxResources: 10,
+		queueMax: 3
+	},
+});
 
 const SHIP_KEYS = Object.keys(SHIP_DETAILS);
 const STATION_KEYS = Object.keys(STATION_DETAILS);
@@ -84,6 +95,7 @@ const STARTING_SYSTEM_DATA = {
 	},
 	resources: 0,
 	scienceLeft: 0,
+	queue: [],
 };
 
 const BLANK_SYSTEM_DATA = {
@@ -91,6 +103,9 @@ const BLANK_SYSTEM_DATA = {
 	stations: {},
 	resources: 0,
 	scienceLeft: 0,
+	queue: [
+		// contains array like [what, key, index]
+	]
 };
 
 const STARTING_EMPIRE_DATA = {
@@ -129,6 +144,7 @@ const STARTING_COMPUTED = {
 			resourceCollectionRate: 0,
 			maxResources: 0,
 			scienceRate: 0,
+			queueMax: 0,
 		},
 	},
 };
@@ -141,6 +157,7 @@ const PROPERTY_LABELS = {
 	resourceCollectionRate: 'Resource Collection Rate',
 	maxResources: 'Max Resources',
 	maxCount: 'Max Count',
+	queueMax: 'Max Queue Size',
 };
 
 function clone(obj) {
@@ -157,16 +174,17 @@ class Empire {
 
 	static THING_SHIP = THING_SHIP;
 	static THING_STATION = THING_STATION;
-	static ALL_SHIP_KEYS = Object.keys(SHIP_DETAILS);
-	static ALL_STATION_KEYS = Object.keys(STATION_DETAILS);
+	static SHIP_KEYS = SHIP_KEYS;
+	static STATION_KEYS = STATION_KEYS;
 	static PROPERTY_LABELS = PROPERTY_LABELS;
 
+	// TODO: Why does this have to be cloned even through we have an object freeze on it?
 	static getShipDetails(key) {
 		return SHIP_DETAILS[key] ? clone(SHIP_DETAILS[key]) : null;
 	}
 
 	static getStationDetails(key) {
-		return STATION_DETAILS[key];
+		return STATION_DETAILS[key] ? clone(STATION_DETAILS[key]) : null;
 	}
 
 	static getThingDetails(what, key) {
@@ -206,9 +224,11 @@ class Empire {
 		return things;
 	}
 
+	// Note: This will also create a blank array if there is none
 	getSystemThingsArray(systemKey, what, key) {
 		const systemData = this.data.systems[systemKey];
 		const things = systemData[THING_DATA_KEYS[what]];
+		if (!things[key]) things[key] = [];
 		return things[key];
 	}
 
@@ -251,17 +271,47 @@ class Empire {
 		return Object.keys(this.data.systems).length;
 	}
 
+	isQueueFull(systemKey) {
+		const system = this.getCurrentSystem();
+		const systemComputed = this.computed.systems[systemKey];
+		return (system.queue.length >= systemComputed.queueMax);
+	}
+
 	enqueueThing(what, key) {
 		const systemKey = this.getCurrentSystemKey();
+		const system = this.getCurrentSystem();
+		if (!system.queue) system.queue = [];
+		if (this.isQueueFull(systemKey)) return false;
+		// We can actually queue it up
 		const thingArr = this.getSystemThingsArray(systemKey, what, key);
-		if (!thingArr) {
+		let i = 0;
+		if (thingArr) {
+			thingArr.push(0); // zero health/progress
+			i = thingArr.length - 1; // Last index
+		} else {
 			this.setSystemThingsArray(systemKey, what, key, [0]);
-			return;
 		}
-		thingArr.push(0);
+		system.queue.push([what, key, i]);
+		return true;
 	}
 	enqueueShip(key) { return this.enqueueThing(THING_SHIP, key); }
 	enqueueStation(key) { return this.enqueueThing(THING_STATION, key); }
+
+	dequeueBuilt() {
+		const systemKey = this.getCurrentSystemKey();
+		const systemData = this.data.systems[systemKey];
+		const { queue } = systemData;
+		// Need to loop backwards because we might change indices of items after i
+		for(let i = queue.length - 1; i >= 0; i -= 1) {
+			const [what, key, index] = queue[i];
+			const maxHealth = Empire.getThingMaxHealth(what, key);
+			const thingsArr = this.getSystemThingsArray(systemKey, what, key);
+			const health = thingsArr[index];
+			if (health >= maxHealth) {
+				queue.splice(i, 1);
+			}
+		}
+	}
 
 	removeThing(systemKey, what, key) {
 		const thingsArr = this.getSystemThingsArray(systemKey, what, key);
@@ -286,7 +336,7 @@ class Empire {
 			this.removeThing(systemKey, what, key);
 			this.setSystemThingsArray(destination, what, key, thingsArrCopy);
 		});
-		console.log(systems);
+		// console.log(systems);
 		this.data.location = destination;
 	}
 
@@ -298,6 +348,7 @@ class Empire {
 		const constructionIndex = this.getConstructionIndex(systemKey, what, key);
 		const maxHealth = Empire.getThingMaxHealth(what, key);
 		const details = Empire.getThingDetails(what, key);
+		const canBuild = !this.isQueueFull(systemKey);
 		// health only for construction item -- might be undefined
 		const health = thingsArr[constructionIndex] || 0;
 		// console.log(key, thingsArr, health, maxHealth);
@@ -316,9 +367,11 @@ class Empire {
 				health,
 				maxHealth,
 				cost: maxHealth,
+				canBuild,
 			},
 			{ ...details }
 		);
+		// if (what === THING_STATION) console.log('station vm', vm);
 		return vm;
 	}
 
@@ -326,11 +379,11 @@ class Empire {
 		const systemKey = this.data.location;
 		const systemData = this.data.systems[systemKey];
 		const systemComputed = this.computed.systems[systemKey];
-		const systemVm = Object.assign({}, clone(systemData), systemComputed);
-		Object.keys(systemVm.fleet).forEach((key) => {
+		const systemVm = Object.assign({}, clone(systemData), clone(systemComputed));
+		Object.keys(SHIP_DETAILS).forEach((key) => {
 			systemVm.fleet[key] = this.getThingViewModel(systemKey, THING_SHIP, key);
 		});
-		Object.keys(systemVm.stations).forEach((key) => {
+		Object.keys(STATION_DETAILS).forEach((key) => {
 			systemVm.stations[key] = this.getThingViewModel(systemKey, THING_STATION, key);
 		});
 		return systemVm;
@@ -365,7 +418,6 @@ class Empire {
 	constructThing(systemKey, what, key, index, availableResources) {
 		const things = this.getSystemThings(systemKey, what);
 		const thingsArr = things[key];
-		
 		const maxHealth = Empire.getThingMaxHealth(what, key);
 		// How much would we like to build? (all)
 		const desiredAmount = maxHealth - thingsArr[index];
@@ -373,16 +425,19 @@ class Empire {
 		const actualAmount = Math.min(desiredAmount, availableResources);
 		// console.log('Construct thing', what, key, thingsArr, 'desired', desiredAmount, 'actual', actualAmount);
 		thingsArr[index] += actualAmount; // Do the build
+		if (thingsArr[index] >= maxHealth) {
+			this.dequeueBuilt();
+		}
 		return actualAmount;
 	}
 
-	constructFirstThing(systemKey, what, availableResources) {
-		const { constructionKey, constructionIndex } = this.getFirstConstructionIndex(systemKey, what);
-		if (!constructionKey || constructionIndex === -1) return 0;
-		// console.log('Construct first thing', what, constructionKey, constructionIndex);
-		const used = this.constructThing(systemKey, what, constructionKey, constructionIndex, availableResources);
-		return used;
-	}
+	// constructFirstThing(systemKey, what, availableResources) {
+	// 	const { constructionKey, constructionIndex } = this.getFirstConstructionIndex(systemKey, what);
+	// 	if (!constructionKey || constructionIndex === -1) return 0;
+	// 	// console.log('Construct first thing', what, constructionKey, constructionIndex);
+	// 	const used = this.constructThing(systemKey, what, constructionKey, constructionIndex, availableResources);
+	// 	return used;
+	// }
 
 	computeSystem(systemKey, seconds = 0) {
 		const systemData = this.data.systems[systemKey];
@@ -397,6 +452,7 @@ class Empire {
 			'resourceCollectionRate',
 			'maxResources',
 			'scienceRate',
+			'queueMax',
 		];
 		// Start at zero, and increase
 		valueKeys.forEach((valueKey) => {
@@ -415,38 +471,36 @@ class Empire {
 				});
 			});
 		});
-		// Object.keys(systemData.fleet).forEach((shipKey) => {
-		// 	const details = Empire.getShipDetails(shipKey);
-		// 	valueKeys.forEach((valueKey) => {
-		// 		if (!details[valueKey]) return;
-		// 		const n = this.getCompletedShipCount(systemKey, shipKey);
-		// 		// console.log(shipKey, n, details[valueKey]);
-		// 		systemComputed[valueKey] += (n * details[valueKey]);
-		// 	});
-		// });
-		// Object.keys(systemData.stations).forEach((stationKey) => {
-		// 	const details = Empire.getStationDetails(stationKey);
-		// 	valueKeys.forEach((valueKey) => {
-		// 		if (!details[valueKey]) return;
-		// 		const n = this.getCompletedStationCount(systemKey, stationKey);
-		// 		// console.log(stationKey, n, details[valueKey]);
-		// 		systemComputed[valueKey] += (n * details[valueKey]);
-		// 	});
-		// });
 		if (!seconds) return;
 		// Handle time-based changes
 		
 		const resourcesIn = (systemComputed.resourceCollectionRate * seconds);
 		let availableResources = systemData.resources + resourcesIn;
-		// Build ship
+		/*
+		// Build ship (OLD way)
 		const availableForShip = Math.min(availableResources, (systemComputed.shipConstructionRate * seconds));
 		const usedOnShip = this.constructFirstThing(systemKey, THING_SHIP, availableForShip);
 		availableResources -= usedOnShip;
-		// Build station
+		// Build station (OLD way)
 		const availableForStation = Math.min(availableResources, (systemComputed.stationConstructionRate * seconds));
-		// console.log(availableResources, systemComputed.stationConstructionRate, seconds);
 		const usedOnStation = this.constructFirstThing(systemKey, THING_STATION, availableForStation);
 		availableResources -= usedOnStation;
+		*/
+		
+		// Build from Queue (NEW way)
+		if (systemData.queue && systemData.queue.length > 0) {
+			systemData.queue.forEach((queueItem) => {
+				const [what, key, index] = queueItem;
+				// How much is really available given the construction rate?
+				const whatRate = THING_COMPUTED_RATE[what];
+				const constructionRate = (systemComputed[whatRate] * seconds);
+				const availableForItem = Math.min(availableResources, constructionRate);
+				const used = this.constructThing(systemKey, what, key, index, availableForItem);
+				availableResources -= used;
+			});
+		}
+		systemComputed.queueSize = systemData.queue.length;
+
 		// Store leftover
 		systemData.resources = Math.min(availableResources, systemComputed.maxResources);
 

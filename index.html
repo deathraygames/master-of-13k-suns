@@ -11,7 +11,7 @@
 	body {
 		background: black;
 		color: #cdd;
-		font-size: 16px;
+		font-size: calc(10px + 1vmin);
 		font-family: 'Monaco', 'Lucida Console', monospace;
 	}
 	#display {
@@ -37,9 +37,9 @@
 		box-sizing: border-box;
 		height: 100%;
 		overflow: auto;
-		min-width: 19%;
-		padding: 5vmin;
-		font-size: calc(10px + 2vmin);
+		width: 24em;
+		max-width: 19%;
+		padding: calc(1em + 1vmin);
 		border-right: solid 1px rgba(255, 255, 255, 0.2);
 	}
 	header {
@@ -66,15 +66,15 @@
 	.sun-1, .sun-2, .sun-3, .sun-4, .sun-5 {
 		margin: 0 -0.3em;
 	}
-	.sun-1 { font-size: 2vmin; }
-	.sun-2 { font-size: 5vmin; }
-	.sun-3 { font-size: 8vmin; }
-	.sun-4 { font-size: 11vmin; }
-	.sun-5 { font-size: 15vmin; }
+	.sun-1 { font-size: 0.5em; }
+	.sun-2 { font-size: 1em; }
+	.sun-3 { font-size: 2.25em; }
+	.sun-4 { font-size: 3em; }
+	.sun-5 { font-size: 5em; }
 	.version, .subtitle {
 		margin: 1.5em 0;
 		text-align: center;
-		font-size: 70%;
+		font-size: 80%;
 		line-height: 1.5em;
 	}
 
@@ -95,6 +95,9 @@
 	}
 	.none {
 		opacity: 0.7;
+	}
+	.thing:hover {
+		background: rgba(200, 255, 255, 0.1);
 	}
 	.none .thing-count {
 		opacity: 0.2;
@@ -117,7 +120,7 @@
 		transform: scale(0);
 		opacity: 0;
 		width: 100%;
-		font-size: 70%;
+		font-size: 80%;
 		padding:0;
 		transition: ease-in-out 0.2s all;
 	}
@@ -165,7 +168,7 @@
 	}
 	#save-load-info {
 		min-height: 1em;
-		font-size: 50%;
+		font-size: 80%;
 		padding: 1em 0;
 	}
 	button {
@@ -200,7 +203,7 @@
 		opacity: 0.2;
 	}
 	.system-list-sector {
-		font-size: 70%;
+		font-size: 80%;
 	}
 </style>
 <!-- <link href="./styles/galaxy.css" rel="stylesheet" /> -->
@@ -235,8 +238,14 @@
 				</div>
 			</div>
 			<div>
-				Scroll left and right to move between sections.
-				Works best on a mobile device.
+				<p>
+					Scroll left and right to move between sections.
+					Works best on a mobile device.
+				</p>
+				<p>
+					On desktop, hold shift while mouse-wheel scrolling, or use 
+					left and right arrows.
+				</p>
 			</div>
 		</article>
 		<article id="empire">
@@ -267,6 +276,7 @@
 			<ul class="thing-list">
 				<li>Resources: <span id="resources"></span> / <span id="maxResources"></span></li>
 				<li>Resource Collection: +<span id="resourceCollectionRate"></span></li>
+				<li>Construction Queue: <span id="queueSize"></span> / <span id="queueMax"></span></li>
 				<li>Ship Construction: +<span id="shipConstructionRate"></span></li>
 				<li>Station Construction: +<span id="stationConstructionRate"></span></li>
 				<li>Science Rate: +<span id="scienceRate"></span></li>

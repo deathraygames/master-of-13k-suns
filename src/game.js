@@ -173,6 +173,7 @@ class Game {
 		this.addClick('save-game', () => this.save());
 		this.addClick('load-game', () => this.load());
 		this.addClick('new-game', () => this.new());
+		// window.addEventListener('wheel', (e) => e.deltaY);
 	}
 
 	setup() {
@@ -236,7 +237,6 @@ class Game {
 			const health = thing.health || 0;
 			const maxHealth = thing.maxHealth || 0;
 			const progressPercent = (things[key]) ? things[key].progressPercent : 0;
-			// console.log(key, things[key]);
 			const classes = ['thing'];
 			if (n <= 0) classes.push('none');
 			if (isBuilding) classes.push('building');
@@ -247,7 +247,8 @@ class Game {
 					<span class="thing-name">${thing.name || key}</span>
 					<span class="thing-count">${n}${outOf}</span>
 					<span>
-						${isBuilding ? '⌛️' : '<button type="button" class="build-button">+</button>'}
+						<button type="button" class="build-button"
+							${thing.canBuild ? '' : 'disabled="disabled"'}>+</button>
 					</span>
 					${options.showTravelToggle ? `<span>
 						<input type="checkbox" class="travel-toggle"
@@ -295,14 +296,14 @@ class Game {
 	drawStations(systemVm) {
 		const { stations } = systemVm;
 		this.getElt('station-list').innerHTML = this.getListItemsHtml(
-			Empire.THING_STATION, Empire.ALL_STATION_KEYS, stations
+			Empire.THING_STATION, Empire.STATION_KEYS, stations
 		);
 	}
 
 	drawFleet(systemVm) {
 		const { fleet } = systemVm;
 		this.getElt('fleet-list').innerHTML = this.getListItemsHtml(
-			Empire.THING_SHIP, Empire.ALL_SHIP_KEYS, fleet, { showTravelToggle: true }
+			Empire.THING_SHIP, Empire.SHIP_KEYS, fleet, { showTravelToggle: true }
 		);
 	}
 
