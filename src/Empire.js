@@ -130,6 +130,16 @@ const STARTING_EMPIRE_DATA = {
 	},
 };
 
+const STARTING_COMPUTED_SYSTEM = {
+	shipConstructionRate: 0,
+	stationConstructionRate: 0,
+	settlementRate: 0,
+	resourceCollectionRate: 0,
+	maxResources: 0,
+	scienceRate: 0,
+	queueMax: 0,
+};
+
 const STARTING_COMPUTED = {
 	transit: [
 		{
@@ -137,16 +147,8 @@ const STARTING_COMPUTED = {
 		}
 	],
 	systems: {
-		'0,0,0': {
-			shipConstructionRate: 0,
-			stationConstructionRate: 0,
-			settlementRate: 0,
-			resourceCollectionRate: 0,
-			maxResources: 0,
-			scienceRate: 0,
-			queueMax: 0,
-		},
-	},
+		'0,0,0': STARTING_COMPUTED_SYSTEM,
+	}
 };
 
 const PROPERTY_LABELS = {
@@ -274,6 +276,7 @@ class Empire {
 	isQueueFull(systemKey) {
 		const system = this.getCurrentSystem();
 		const systemComputed = this.computed.systems[systemKey];
+		if (!systemComputed) true; // likely that we haven't finished our first compute
 		return (system.queue.length >= systemComputed.queueMax);
 	}
 
@@ -338,6 +341,7 @@ class Empire {
 		});
 		// console.log(systems);
 		this.data.location = destination;
+		this.computeSystem(destination, 0);
 	}
 
 	getThingViewModel(systemKey, what, key) {
@@ -379,7 +383,7 @@ class Empire {
 		const systemKey = this.data.location;
 		const systemData = this.data.systems[systemKey];
 		const systemComputed = this.computed.systems[systemKey];
-		const systemVm = Object.assign({}, clone(systemData), clone(systemComputed));
+		const systemVm = Object.assign({}, clone(systemData), systemComputed);
 		Object.keys(SHIP_DETAILS).forEach((key) => {
 			systemVm.fleet[key] = this.getThingViewModel(systemKey, THING_SHIP, key);
 		});

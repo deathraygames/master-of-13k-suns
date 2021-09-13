@@ -20,13 +20,13 @@
 
 Rather than using webpack for compression like last year, instead I used vite - mainly because I was already using it for a quick and easy dev server, but also because the build process was super easy. I didn't do any minimizing of my code by hand (i.e., code golf, Xem-style js) because fortunately I wasn't close to the limit.
 
-* Source: ~44.7 KB
+* Source: ~44.9 KB
 	* js scripts: ~36.8 KB
-		* `Empire.js`: 15.9 KB
+		* `Empire.js`: 16.1 KB
 		* `game.js`: 11.8 KB
-		* All others: ~9 KB (but not all was really used)
+		* All others: ~9 KB (but not all were really used)
 	* html/css: 7.95 KB
-* Minified
-	* js: 19.4 KB
+* Minified: 26.2 KB
+	* js: 18.3 KB
 	* html/css: 7.98 KB (it actually went up a tiny amount)
-* Zipped: **9.42** KB (Plenty of extra space!)
+* Zipped: **9.00** KB (Plenty of extra space!)

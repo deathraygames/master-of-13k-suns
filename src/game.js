@@ -1,18 +1,18 @@
-import PseudoRandom from './PseudoRandom.js';
-import SvgRenderer from './SvgRenderer.js';
+// import SvgRenderer from './SvgRenderer.js';
 import Galaxy from './Galaxy.js';
 import Empire from './Empire.js';
+import { version } from '../package.json';
 
 class Game {
 	constructor() {
-		this.version = '1.0.0';
+		this.version = version;
 		this.seed = 13312;
 		this.loopTickTime = 202; // ms
 		this.zoom = 1;
-		this.renderer = new SvgRenderer();
-		this.renderer.init('#display');
-		const dims = this.renderer.getDimensions();
-		this.viewPortSize = [dims.width, dims.height];
+		// this.renderer = new SvgRenderer();
+		// this.renderer.init('#display');
+		// const dims = this.renderer.getDimensions();
+		// this.viewPortSize = [dims.width, dims.height];
 		// Could need a big decimal for viewerPosition?
 		// https://stackoverflow.com/a/66939244/1766230
 		this.viewerPosition = { x: 0, y: 0 };
@@ -22,7 +22,7 @@ class Game {
 		this.lastTime = 0;
 		this.selected = {};
 		this.showThingKey = null;
-		console.log(this.galaxy.getSector(0, 0));
+		console.log(this, this.galaxy.getSector(0, 0));
 		window.document.addEventListener('DOMContentLoaded', () => this.setup());
 	}
 
