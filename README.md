@@ -5,7 +5,7 @@
 
 ## Play
 
-* Latest main branch: https://deathraygames.github.io/master-of-13k-suns/
+* Latest build on the `main` branch: https://deathraygames.github.io/master-of-13k-suns/dist/
 
 ## JS13k
 

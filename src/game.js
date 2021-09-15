@@ -1,7 +1,11 @@
 // import SvgRenderer from './SvgRenderer.js';
 import Galaxy from './Galaxy.js';
 import Empire from './Empire.js';
+
+// NOTE: Import of json won't work in the browser now
 import { version } from '../package.json';
+// Soon: // import { version } from '../package.json' assert { type: "json" };
+// Work-around: const version = '1.0.1';
 
 class Game {
 	constructor() {
