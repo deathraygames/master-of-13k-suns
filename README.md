@@ -5,7 +5,7 @@
 
 ## Play
 
-* Latest build on the `main` branch: https://deathraygames.github.io/master-of-13k-suns/dist/
+* Latest build on the `main` branch: https://deathraygames.github.io/master-of-13k-suns/dist/ (this is the best version)
 
 ## JS13k
 
@@ -15,6 +15,13 @@
 * See all the entries for the competition at http://2021.js13kgames.com/
 
 ## Post Mortem
+
+I didn't have too much time to work on this game during the jam's month, so I went with simple design based off a previous game [Master of a Thousand Suns](https://deathraygames.com/play-online/master-of-1k-suns/) (which is even more simple). My general goals were: 
+
+* 4x gameplay: Explore, Expand, Exploit, Exterminate
+* Slow incremental gameplay - easy to begin, but takes forever to complete
+* Mobile-friendly
+* Of course: Fit it all into 13kb!
 
 ### Compression
 
@@ -30,3 +37,8 @@ Rather than using webpack for compression like last year, instead I used vite - 
 	* js: 18.3 KB
 	* html/css: 7.98 KB (it actually went up a tiny amount)
 * Zipped: **8.95** KB (Plenty of extra space!)
+
+### Feedback
+
+* Shortest (impatient) play-thru possible: https://youtu.be/uF1W_mfcCN8?t=369
+* "Nice layout. I would definitely have benefited from a short tutorial and/or a way to speed up time"
